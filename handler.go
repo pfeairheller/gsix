@@ -31,7 +31,7 @@ func (handler *GHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) 
 	method := MethodConst(req.Method)
 	if method & handler.methods > 0 {
 		greq := NewGRequest(req)
-		gresp := NewGResponse(resp)
+		gresp := NewGResponse(resp, greq)
 		for _, handlerFunc := range handler.handlers {
 			handlerFunc(greq, gresp)
 		}
