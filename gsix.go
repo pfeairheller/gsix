@@ -2,11 +2,12 @@ package gsix
 
 import (
 	"net/http"
+	"errors"
 )
 
 
 type GSix struct {
-	vars    map[string]string
+	vars    map[string] interface{}
 	locals  map[string]string
 	routes  map[string] *GHandler
 	params  map[string] ParamCallback
@@ -16,7 +17,7 @@ type GSix struct {
 
 func NewGSix() (*GSix) {
 	out := new(GSix)
-	out.vars = make(map[string]string)
+	out.vars = make(map[string]interface{})
 	out.routes = make(map[string]*GHandler)
 	out.params = make(map[string]ParamCallback)
 	out.engines = make(map[string]EngineCallback)
@@ -32,6 +33,9 @@ type ViewCallback func(err error, html string) (bool)
 
 func(g *GSix) CreateServer() (*Server) {
 	server := NewServer()
+
+	//TODO  - default Configuration...
+
 	return server
 }
 
@@ -39,16 +43,16 @@ func (g *GSix)Local(name string, value string) {
 	g.locals[name] = value
 }
 
-func (g *GSix)Set(name string, value string) {
+func (g *GSix)Set(name string, value interface{}) {
 	g.vars[name] = value
 }
 
-func (g *GSix)Val(name string) (string){
+func (g *GSix)Val(name string) (interface{}){
 	return g.vars[name]
 }
 
 func (g *GSix)Enable(name string) {
-	g.vars[name] = "true"
+	g.vars[name] = true
 }
 
 func (g *GSix)Disable(name string) {
@@ -56,11 +60,11 @@ func (g *GSix)Disable(name string) {
 }
 
 func (g *GSix)Enabled(name string) bool {
-	return g.vars[name] == "true"
+	return g.vars[name] == true
 }
 
 func (g *GSix)Disabled(name string) bool {
-	return g.vars[name] != "true"
+	return g.vars[name] != true
 }
 
 
@@ -121,7 +125,7 @@ func (g *GSix) Param(param string, callback ParamCallback) {
 	g.params[param] = callback
 }
 
-func (g *GSix) Render(viewName string, options map[string]string, fn ViewCallback) {
+func (g *GSix) Render(viewName string, options map[string]string, fn ViewCallback) (bool) {
 	opts := make(map[string]string)
 	merge(opts, options)
 
@@ -140,10 +144,20 @@ func (g *GSix) Render(viewName string, options map[string]string, fn ViewCallbac
 
 
 	if view == nil {
-		//TODO - CREATE VIEW HERE...
+		view = NewView(viewName, g.Val("views").(string), g.Val("view engine").(EngineCallback), &g.engines)
+
+		if view.path == "" {
+			err := errors.New("Failed to lookup view " + viewName)
+			return fn(err, "")
+		}
+
+		if cache == "true" {
+			g.cache[viewName] = view
+		}
+		
 	}
 
-	view.Render(opts, fn)
+	return view.Render(opts, fn)
 	
 }
 

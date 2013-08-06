@@ -11,13 +11,15 @@ type View struct {
 	ext string
 	path string
 	engine EngineCallback
+	defaultEngine EngineCallback
 }
 
-func NewView(name, root string, engines *map[string] EngineCallback) (*View) {
+func NewView(name, root string, defaultEngine EngineCallback, engines *map[string] EngineCallback) (*View) {
 	view := new(View)
 	view.name = name
 	view.ext = filepath.Ext(name)
 	view.engine = (*engines)[view.ext]
+	view.defaultEngine = defaultEngine
 	view.path = view.Lookup(name)
 
 	return view
@@ -39,8 +41,9 @@ func (v *View) Lookup(name string) (string) {
 	return path
 }
 
-func (v *View) Render(options map[string]string, fn ViewCallback) {
+func (v *View) Render(options map[string]string, fn ViewCallback) (bool) {
 	v.engine(v.path, options, fn)
+	return true
 }
 
 func exists(path string) (bool) {
