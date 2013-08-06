@@ -12,6 +12,7 @@ type MediaRange struct {
 	subtype string
 	quality float32
 	originalIndex int
+	params map[string]string
 }
 
 type MediaRanges []*MediaRange
@@ -116,11 +117,11 @@ func normalizeType(key string) *MediaRange {
 	if strings.Contains(key, "/") {
 		return parseAccept(key, -1)
  	} else {
-		return &MediaRange{ extnameMap[key], "", "", 0, -1 }
+		return &MediaRange{ extnameMap[key], "", "", 0, -1, nil }
 	}
 }
 
-func nrmalizeTypes(keys []string) []*MediaRange {
+func normalizeTypes(keys []string) []*MediaRange {
 	out := []*MediaRange{}
 	for _, key := range keys {
 		out = append(out, normalizeType(key))

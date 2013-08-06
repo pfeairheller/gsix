@@ -110,11 +110,11 @@ func (resp *GResponse) Format(formats map[string]func()) {
 	var keys []string
 	for k,_ := range formats { keys = append(keys, k) }
 
-
 	key, err := resp.req.Accepts(keys)
 
-	if err != nil {
+	if err == nil {
 		resp.Set("Content-Type", normalizeType(key).value)
+		formats[key]()
 	} else if ok {
 		fn()
 	} else {
@@ -123,8 +123,24 @@ func (resp *GResponse) Format(formats map[string]func()) {
 	
 }
 
-func (resp *GResponse) Render(view string, locals interface{}, callback func(err error, html string)) {
+func (resp *GResponse) Render(view string, locals map[string]string, callback ViewCallback) {
+	
+	var fn ViewCallback
+	if callback == nil {
+		fn = func(err error, html string) bool {
+			if err != nil {
+				return resp.req.Next(err)
+			}
 
+			resp.Send(200, html)
+			return true
+		}
+	} else {
+		fn = callback
+	}
+
+	resp.req.app.Render(view, locals, fn)
+	
 }
 
 

@@ -13,6 +13,7 @@ const (
 	ALL = GET | HEAD | POST | PUT | DELETE
 )
 
+//TODO:  Something about NEXT parameter to these handlers, and them calling it to complete the chain...
 type GHandlerFunc func(*GRequest, *GResponse)
 
 type GHandler struct {

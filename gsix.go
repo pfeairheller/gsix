@@ -11,6 +11,7 @@ type GSix struct {
 	routes  map[string] *GHandler
 	params  map[string] ParamCallback
 	engines map[string] EngineCallback
+	cache   map[string] *View
 }
 
 func NewGSix() (*GSix) {
@@ -19,13 +20,15 @@ func NewGSix() (*GSix) {
 	out.routes = make(map[string]*GHandler)
 	out.params = make(map[string]ParamCallback)
 	out.engines = make(map[string]EngineCallback)
+	out.cache = make(map[string]*View)
 
 	return out
 }
 
 
-type EngineCallback func(path string, options map[string]string, callback func(string))
+type EngineCallback func(path string, options map[string]string, callback ViewCallback)
 type ParamCallback func(req *GRequest, resp GResponse, next func(), id string)(interface{})
+type ViewCallback func(err error, html string) (bool)
 
 func(g *GSix) CreateServer() (*Server) {
 	server := NewServer()
@@ -108,10 +111,45 @@ func (g *GSix) Static(pathname string) (GHandlerFunc) {
 }
 
 func(g *GSix) Engine(ext string, engine EngineCallback) {
+	if ext[0] != '.' {
+		ext = "." + ext
+	}
 	g.engines[ext] = engine
 }
 
 func (g *GSix) Param(param string, callback ParamCallback) {
 	g.params[param] = callback
+}
+
+func (g *GSix) Render(viewName string, options map[string]string, fn ViewCallback) {
+	opts := make(map[string]string)
+	merge(opts, options)
+
+	//TODO:  Something about locals, not sure what it is
+
+	var cache string
+	var ok bool
+	if cache, ok = opts["view cache"]; ok == false {
+		cache, opts["view cache"] = "false", "false"
+	}
+
+	var view *View
+	if cache == "true" {
+		view = g.cache[viewName]
+	}
+
+
+	if view == nil {
+		//TODO - CREATE VIEW HERE...
+	}
+
+	view.Render(opts, fn)
+	
+}
+
+func merge(dst map[string]string, src map[string]string) {
+	for k,v := range src {
+		dst[k] = v
+	}
 }
 
