@@ -23,6 +23,11 @@ func NewGSix() (*GSix) {
 	out.engines = make(map[string]EngineCallback)
 	out.cache = make(map[string]*View)
 
+	//TODO  - default Configuration...
+
+	out.engine("html", NewTemplateEngine("views").Render)
+	out.Set("view engine", "html")
+
 	return out
 }
 
@@ -33,8 +38,6 @@ type ViewCallback func(err error, html string) (bool)
 
 func(g *GSix) CreateServer() (*Server) {
 	server := NewServer()
-
-	//TODO  - default Configuration...
 
 	return server
 }

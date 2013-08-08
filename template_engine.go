@@ -53,3 +53,6 @@ func (t *TemplateEngine)TemplateWalker(path string, info os.FileInfo, err error)
 	return nil
 }
 
+func(t *TemplateEngine) Render (path string, options map[string]string, callback ViewCallback) {
+	callback(nil, "<h1>This is the template engine</h1>")
+}
