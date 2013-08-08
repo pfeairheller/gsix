@@ -2,7 +2,8 @@ package gsix
 
 import (
 	"net/http"
-	"errors"
+	"path/filepath"
+	"os"
 )
 
 
@@ -11,7 +12,7 @@ type GSix struct {
 	locals  map[string]string
 	routes  map[string] *GHandler
 	params  map[string] ParamCallback
-	engines map[string] EngineCallback
+	engines map[string] Engine
 	cache   map[string] *View
 }
 
@@ -20,21 +21,27 @@ func NewGSix() (*GSix) {
 	out.vars = make(map[string]interface{})
 	out.routes = make(map[string]*GHandler)
 	out.params = make(map[string]ParamCallback)
-	out.engines = make(map[string]EngineCallback)
+	out.engines = make(map[string]Engine)
 	out.cache = make(map[string]*View)
 
 	//TODO  - default Configuration...
 
-	out.engine("html", NewTemplateEngine("views").Render)
+	dir, _ := os.Getwd()
+	out.Engine("html", NewTemplateEngine())
+	out.Set("views", filepath.Join(dir, "views"))
 	out.Set("view engine", "html")
 
 	return out
 }
 
 
-type EngineCallback func(path string, options map[string]string, callback ViewCallback)
 type ParamCallback func(req *GRequest, resp GResponse, next func(), id string)(interface{})
 type ViewCallback func(err error, html string) (bool)
+
+
+type Engine interface {
+	Render (path string, data interface{}, options map[string]string, callback ViewCallback)
+}
 
 func(g *GSix) CreateServer() (*Server) {
 	server := NewServer()
@@ -78,7 +85,7 @@ func(g *GSix) Map(handlerFunc GHandlerFunc, path string, method int) {
 
 	handler := g.routes[path]
 	if handler == nil {
-		handler = NewGHandler(method)
+		handler = NewGHandler(method, g)
 		g.routes[path] = handler
 		http.Handle(path, handler)
 	}
@@ -117,7 +124,7 @@ func (g *GSix) Static(pathname string) (GHandlerFunc) {
 	}
 }
 
-func(g *GSix) Engine(ext string, engine EngineCallback) {
+func(g *GSix) Engine(ext string, engine Engine) {
 	if ext[0] != '.' {
 		ext = "." + ext
 	}
@@ -128,7 +135,7 @@ func (g *GSix) Param(param string, callback ParamCallback) {
 	g.params[param] = callback
 }
 
-func (g *GSix) Render(viewName string, options map[string]string, fn ViewCallback) (bool) {
+func (g *GSix) Render(viewName string, data interface{}, options map[string]string, fn ViewCallback) (bool) {
 	opts := make(map[string]string)
 	merge(opts, options)
 
@@ -136,6 +143,7 @@ func (g *GSix) Render(viewName string, options map[string]string, fn ViewCallbac
 
 	var cache string
 	var ok bool
+	var err error
 	if cache, ok = opts["view cache"]; ok == false {
 		cache, opts["view cache"] = "false", "false"
 	}
@@ -147,10 +155,8 @@ func (g *GSix) Render(viewName string, options map[string]string, fn ViewCallbac
 
 
 	if view == nil {
-		view = NewView(viewName, g.Val("views").(string), g.Val("view engine").(EngineCallback), &g.engines)
-
-		if view.path == "" {
-			err := errors.New("Failed to lookup view " + viewName)
+		view, err = NewView(viewName, g.Val("views").(string), g.Val("view engine").(string), &g.engines)
+		if err != nil {
 			return fn(err, "")
 		}
 
@@ -160,7 +166,7 @@ func (g *GSix) Render(viewName string, options map[string]string, fn ViewCallbac
 		
 	}
 
-	return view.Render(opts, fn)
+	return view.Render(data, opts, fn)
 	
 }
 

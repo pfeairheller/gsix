@@ -18,11 +18,13 @@ type GHandlerFunc func(*GRequest, *GResponse)
 
 type GHandler struct {
 	handlers []GHandlerFunc
+	app *GSix
 	methods int
 }
 
-func NewGHandler(methods int) (*GHandler){
+func NewGHandler(methods int, app *GSix) (*GHandler){
 	handler := new(GHandler)
+	handler.app = app
 	handler.handlers = []GHandlerFunc{}
 	handler.methods = methods
 	return handler
@@ -31,7 +33,7 @@ func NewGHandler(methods int) (*GHandler){
 func (handler *GHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	method := MethodConst(req.Method)
 	if method & handler.methods > 0 {
-		greq := NewGRequest(req)
+		greq := NewGRequest(req, handler.app)
 		gresp := NewGResponse(resp, greq)
 		for _, handlerFunc := range handler.handlers {
 			handlerFunc(greq, gresp)

@@ -13,10 +13,10 @@ type GRequest struct {
 	accepts MediaRanges
 }
 
-func NewGRequest(raw *http.Request) (* GRequest) {
+func NewGRequest(raw *http.Request, app *GSix) (* GRequest) {
 	out := new(GRequest)
 	out.raw = raw
-
+	out.app = app
 	return out
 }
 

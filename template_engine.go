@@ -1,58 +1,40 @@
 package gsix
 
 import (
-	"os"
-	"log"
 	"html/template"
-	"path/filepath"
-	"io/ioutil"
+	"bytes"
 )
 
 type TemplateEngine struct {
-	BaseDir string
 	Templates map[string] *template.Template
 }
 
 
-func NewTemplateEngine(basedir string) (*TemplateEngine) {
+func NewTemplateEngine() (*TemplateEngine) {
 	templateEngine := new(TemplateEngine)
-	templateEngine.BaseDir = basedir
 	templateEngine.Templates = make(map[string] *template.Template)
-
-	filepath.Walk(basedir, templateEngine.TemplateWalker)
-
 	return templateEngine
 }
 
-func (t *TemplateEngine)TemplateWalker(path string, info os.FileInfo, err error) error {
-	if !info.IsDir() {
-		return nil
-	}
+func(t *TemplateEngine) Render (path string, data interface{}, options map[string]string, callback ViewCallback) {
+	var err error
 
-	namespace, _ := filepath.Rel(t.BaseDir, path)
-
-	templates := t.Templates[namespace]
-	if templates == nil {
-		var files []string
-		fileInfos, _ := ioutil.ReadDir(path)
-		for _, fileInfo := range fileInfos {
-			if !fileInfo.IsDir() {
-				files = append(files, path + "/" + fileInfo.Name())
-			}
+	tmpl, ok := t.Templates[path]
+	if !ok {
+		tmpl, err= tmpl.ParseFiles(path)
+		if err != nil {
+			callback(err, "")
+			return
 		}
 
-		if len(files) > 0 {
-			templates, err = template.ParseFiles(files...)
-			if err != nil {
-				log.Fatal(err)
-			}
-			t.Templates[namespace] = templates
-		}
+		t.Templates[path] = tmpl
 	}
 
-	return nil
-}
+	var doc bytes.Buffer 
+	if err := tmpl.Execute(&doc, data); err != nil {
+			callback(err, "")
+			return
+	}
 
-func(t *TemplateEngine) Render (path string, options map[string]string, callback ViewCallback) {
-	callback(nil, "<h1>This is the template engine</h1>")
+	callback(nil, doc.String())
 }

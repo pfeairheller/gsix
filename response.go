@@ -123,7 +123,7 @@ func (resp *GResponse) Format(formats map[string]func()) {
 	
 }
 
-func (resp *GResponse) Render(view string, locals map[string]string, callback ViewCallback) {
+func (resp *GResponse) Render(view string, data interface{}, callback ViewCallback) {
 	
 	var fn ViewCallback
 	if callback == nil {
@@ -139,7 +139,9 @@ func (resp *GResponse) Render(view string, locals map[string]string, callback Vi
 		fn = callback
 	}
 
-	resp.req.app.Render(view, locals, fn)
+	//TODO: Something here with _locals...  ignoring for now
+	_locals := make(map[string]string)
+	resp.req.app.Render(view, data, _locals, fn)
 	
 }
 
