@@ -25,7 +25,12 @@ func NewGSix() (*GSix) {
 	out.cache = make(map[string]*View)
 
 	//TODO  - default Configuration...
+	var env string
+	if env = os.Getenv("GSIX_ENV"); env == "" {
+		env = "development"
+	}
 
+	out.Set("env", env)
 	dir, _ := os.Getwd()
 	out.Engine("html", NewTemplateEngine())
 	out.Set("views", filepath.Join(dir, "views"))
