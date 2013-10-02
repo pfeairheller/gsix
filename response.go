@@ -21,7 +21,6 @@ func NewGResponse(raw http.ResponseWriter, req *GRequest) (*GResponse){
 	out.req = req
 	out.charset = "utf-8"
 	out.status = 200
-	
 
 	return out
 }
@@ -141,7 +140,7 @@ func (resp *GResponse) Render(view string, data interface{}, callback ViewCallba
 
 	//TODO: Something here with _locals...  ignoring for now
 	_locals := make(map[string]string)
-	resp.req.app.Render(view, data, _locals, fn)
+	resp.req.App.Render(view, data, _locals, fn)
 	
 }
 

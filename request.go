@@ -8,15 +8,17 @@ import (
 )
 
 type GRequest struct {
-	app *GSix
+	App *GSix
 	raw *http.Request
 	accepts MediaRanges
+	Url string
 }
 
 func NewGRequest(raw *http.Request, app *GSix) (* GRequest) {
 	out := new(GRequest)
 	out.raw = raw
-	out.app = app
+	out.App = app
+	out.Url = raw.URL.Path
 	return out
 }
 
